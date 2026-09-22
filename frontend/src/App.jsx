@@ -1,61 +1,291 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import MetricCard from './components/MetricCard.jsx';
+import SourceComparison from './components/SourceComparison.jsx';
+import ConsentToggle from './components/ConsentToggle.jsx';
+import BlockchainRecord from './components/BlockchainRecord.jsx';
+import WellnessCard from './components/WellnessCard.jsx';
+import PatientSelector from './components/PatientSelector.jsx';
+import StatusBadge from './components/StatusBadge.jsx';
 
-function App() {
-  const [apiStatus, setApiStatus] = useState({ loading: true, ok: false, data: null, error: null });
+const DEFAULT_INSURER = '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC';
+const AVAILABLE_DATES = ['2026-09-22', '2026-09-21', '2026-09-20'];
+
+export default function App() {
+  const [patients, setPatients] = useState([]);
+  const [selectedPatientId, setSelectedPatientId] = useState('P001');
+  const [selectedDate, setSelectedDate] = useState('2026-09-22');
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const [sources, setSources] = useState([]);
+  const [validationResult, setValidationResult] = useState(null);
+  const [onChainRecord, setOnChainRecord] = useState(null);
+  const [hasConsent, setHasConsent] = useState(false);
+  const [rewardPoints, setRewardPoints] = useState(0);
+  const [blockchainInfo, setBlockchainInfo] = useState(null);
+
+  // Load patients list and blockchain info once on mount
+  useEffect(() => {
+    fetch('/api/patients')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setPatients(data.data);
+        }
+      })
+      .catch((err) => console.error('Failed to load patients:', err));
+
+    fetch('/api/blockchain/info')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setBlockchainInfo(data.data);
+        }
+      })
+      .catch((err) => console.error('Failed to load blockchain info:', err));
+  }, []);
+
+  // Fetch patient telemetry, validation, on-chain record, consent, and rewards
+  const loadPatientData = useCallback(async () => {
+    if (!selectedPatientId) return;
+    setLoading(true);
+    setError(null);
+
+    try {
+      // 1. Fetch sources
+      const sourcesRes = await fetch(
+        `/api/health/${selectedPatientId}/sources?date=${selectedDate}`
+      );
+      const sourcesData = await sourcesRes.json();
+      if (sourcesData.success && sourcesData.data.length > 0) {
+        setSources(sourcesData.data[0].sources || []);
+      } else {
+        setSources([]);
+      }
+
+      // 2. Fetch validation & consensus metrics
+      const valRes = await fetch(
+        `/api/health/${selectedPatientId}/validation?date=${selectedDate}`
+      );
+      const valData = await valRes.json();
+      if (valData.success && valData.data.length > 0) {
+        setValidationResult(valData.data[0]);
+      } else {
+        setValidationResult(null);
+      }
+
+      // 3. Fetch on-chain record status
+      try {
+        const onChainRes = await fetch(
+          `/api/health/${selectedPatientId}/record-onchain?date=${selectedDate}`
+        );
+        const onChainData = await onChainRes.json();
+        if (onChainData.success) {
+          setOnChainRecord(onChainData.data);
+        } else {
+          setOnChainRecord(null);
+        }
+      } catch {
+        setOnChainRecord(null);
+      }
+
+      // 4. Fetch consent status
+      try {
+        const consentRes = await fetch(
+          `/api/consent/${selectedPatientId}?entity=${DEFAULT_INSURER}`
+        );
+        const consentData = await consentRes.json();
+        if (consentData.success) {
+          setHasConsent(consentData.data?.hasConsent || false);
+        }
+      } catch {
+        setHasConsent(false);
+      }
+
+      // 5. Fetch wellness reward points
+      try {
+        const rewardsRes = await fetch(`/api/rewards/${selectedPatientId}`);
+        const rewardsData = await rewardsRes.json();
+        if (rewardsData.success) {
+          setRewardPoints(rewardsData.rewardPoints || 0);
+        }
+      } catch {
+        setRewardPoints(0);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedPatientId, selectedDate]);
 
   useEffect(() => {
-    fetch('/api/health')
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
+    loadPatientData();
+  }, [loadPatientData]);
+
+  // Handle toggling consent
+  const handleToggleConsent = async (granted, entityAddress) => {
+    const res = await fetch('/api/consent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        patientId: selectedPatientId,
+        entityAddress,
+        granted
       })
-      .then((data) => setApiStatus({ loading: false, ok: true, data, error: null }))
-      .catch((err) => setApiStatus({ loading: false, ok: false, data: null, error: err.message }));
-  }, []);
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Failed to update consent');
+    }
+    setHasConsent(granted);
+    return data;
+  };
+
+  // Handle recording validated hash to blockchain
+  const handleRecordToBlockchain = async (date) => {
+    const res = await fetch(`/api/health/${selectedPatientId}/record`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Failed to write record to blockchain');
+    }
+    // Refresh on-chain status
+    await loadPatientData();
+    return data;
+  };
+
+  const currentPatient = patients.find((p) => p.id === selectedPatientId);
+  const consensus = validationResult?.consensusMetrics;
 
   return (
     <div className="container">
+      {/* Top Navigation Bar */}
       <header>
         <div className="brand">
           <div className="brand-icon">H</div>
           <div>
             <h1 className="brand-title">Health-Chain</h1>
-            <p className="brand-subtitle">Decentralized Health Data & Insurance MVP</p>
+            <p className="brand-subtitle">Decentralized Patient Health & Insurance Portal</p>
           </div>
         </div>
-        <div>
-          {apiStatus.loading ? (
-            <span className="badge badge-warning">Checking backend API...</span>
-          ) : apiStatus.ok ? (
-            <span className="badge badge-success">API Online: {apiStatus.data?.message}</span>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <StatusBadge
+            status="Patient Portal Active"
+            type="info"
+            label="Patient View"
+          />
+          {blockchainInfo?.connected ? (
+            <StatusBadge
+              status="Connected"
+              type="success"
+              label={`Hardhat Node (${blockchainInfo.network})`}
+            />
           ) : (
-            <span className="badge badge-danger">API Offline ({apiStatus.error})</span>
+            <StatusBadge
+              status="Offline"
+              type="warning"
+              label="Local Node Ready"
+            />
           )}
         </div>
       </header>
 
-      <div className="card">
-        <h2 className="card-title">Unit 01: Project Foundation Active</h2>
-        <p className="card-desc">
-          The Health-Chain full-stack architecture is initialized with React, Express, and Hardhat.
-        </p>
-        <div className="grid">
-          <div style={{ padding: '16px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid var(--border)' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 600, marginBottom: '6px' }}>Frontend</h3>
-            <p style={{ fontSize: '13px', color: 'var(--muted)' }}>React 18 + Vite running with custom UI design tokens</p>
-          </div>
-          <div style={{ padding: '16px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid var(--border)' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 600, marginBottom: '6px' }}>Backend</h3>
-            <p style={{ fontSize: '13px', color: 'var(--muted)' }}>Node.js + Express API server with CORS and health monitoring</p>
-          </div>
-          <div style={{ padding: '16px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid var(--border)' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 600, marginBottom: '6px' }}>Blockchain</h3>
-            <p style={{ fontSize: '13px', color: 'var(--muted)' }}>Hardhat workspace prepared for Solidity contracts & ethers.js</p>
-          </div>
+      {/* Patient & Date Selection */}
+      <PatientSelector
+        patients={patients}
+        selectedPatientId={selectedPatientId}
+        onSelectPatient={setSelectedPatientId}
+        availableDates={AVAILABLE_DATES}
+        selectedDate={selectedDate}
+        onSelectDate={setSelectedDate}
+        currentPatient={currentPatient}
+      />
+
+      {error && (
+        <div
+          className="card"
+          style={{ backgroundColor: 'var(--danger-bg)', borderColor: '#FECACA', color: 'var(--danger)' }}
+        >
+          <strong>Error loading telemetry:</strong> {error}
         </div>
+      )}
+
+      {/* Health Metrics Dashboard */}
+      <section style={{ marginBottom: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text)' }}>
+            Daily Consensus Metrics ({selectedDate})
+          </h2>
+          <span style={{ fontSize: '13px', color: 'var(--muted)' }}>
+            {validationResult?.validated
+              ? 'Computed via cross-device consensus'
+              : 'Discrepancy detected between sources'}
+          </span>
+        </div>
+
+        <div className="grid">
+          <MetricCard
+            title="Daily Steps"
+            value={consensus?.steps ?? (sources[0]?.steps || null)}
+            unit="steps"
+            icon="🏃"
+            subtitle={validationResult?.validated ? 'Target: ≥ 10,000 steps' : 'Unverified reading'}
+            qualifiesDiscount={(consensus?.steps || 0) >= 10000}
+          />
+          <MetricCard
+            title="Heart Rate"
+            value={consensus?.heartRate ?? (sources[0]?.heartRate || null)}
+            unit="bpm"
+            icon="💓"
+            subtitle="Resting average"
+          />
+          <MetricCard
+            title="Sleep Duration"
+            value={consensus?.sleepHours ?? (sources[0]?.sleepHours || null)}
+            unit="hours"
+            icon="🌙"
+            subtitle={validationResult?.validated ? 'Target: ≥ 7.0 hours' : 'Unverified reading'}
+            qualifiesDiscount={(consensus?.sleepHours || 0) >= 7.0}
+          />
+          <MetricCard
+            title="Active Burn"
+            value={consensus?.calories ?? (sources[0]?.calories || null)}
+            unit="kcal"
+            icon="🔥"
+            subtitle="Consensus calories"
+          />
+        </div>
+      </section>
+
+      {/* Multi-Source Comparison */}
+      <SourceComparison sources={sources} validationResult={validationResult} />
+
+      {/* Blockchain Record & Cryptographic Proof */}
+      <BlockchainRecord
+        patientId={selectedPatientId}
+        date={selectedDate}
+        validationResult={validationResult}
+        onChainRecord={onChainRecord}
+        onRecordToBlockchain={handleRecordToBlockchain}
+        loading={loading}
+      />
+
+      {/* Insurance Consent & Wellness Rewards in 2 columns */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '20px' }}>
+        <ConsentToggle
+          patientId={selectedPatientId}
+          hasConsent={hasConsent}
+          onToggle={handleToggleConsent}
+          loading={loading}
+        />
+        <WellnessCard points={rewardPoints} />
       </div>
     </div>
   );
 }
-
-export default App;

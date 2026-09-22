@@ -245,4 +245,16 @@ app.get('/api/consent/:patientId', async (req, res) => {
   }
 });
 
+// Retrieve patient wellness reward points
+app.get('/api/rewards/:patientId', async (req, res) => {
+  const { patientId } = req.params;
+
+  try {
+    const points = await blockchainService.getRewardPoints(patientId);
+    res.json({ success: true, patientId, rewardPoints: points });
+  } catch (err) {
+    res.status(500).json({ success: false, error: `Failed to fetch reward points: ${err.message}` });
+  }
+});
+
 export default app;
