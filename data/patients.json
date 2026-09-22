@@ -1,0 +1,35 @@
+[
+  {
+    "id": "P001",
+    "name": "Aarav Sharma",
+    "age": 29,
+    "gender": "Male",
+    "bloodGroup": "O+",
+    "email": "aarav.demo@healthchain.local",
+    "policyId": "POL-1001",
+    "walletAddress": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "status": "Active"
+  },
+  {
+    "id": "P002",
+    "name": "Priya Patel",
+    "age": 34,
+    "gender": "Female",
+    "bloodGroup": "B+",
+    "email": "priya.demo@healthchain.local",
+    "policyId": "POL-1002",
+    "walletAddress": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+    "status": "Active"
+  },
+  {
+    "id": "P003",
+    "name": "Rohan Verma",
+    "age": 45,
+    "gender": "Male",
+    "bloodGroup": "A+",
+    "email": "rohan.demo@healthchain.local",
+    "policyId": "POL-1003",
+    "walletAddress": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+    "status": "Active"
+  }
+]

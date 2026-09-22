@@ -17,14 +17,14 @@ Update this file after every meaningful implementation change.
 - [x] Six-file context system created
 - [x] Build plan created
 - [x] Unit 01 — Project Foundation (React frontend, Express backend, Hardhat workspace)
+- [x] Unit 02 — Mock Health Data (Patients and multi-source health records API)
 
 ## In Progress
 
-- [ ] Unit 02 — Mock Health Data
+- [ ] Unit 03 — Health Validation
 
 ## Next Up
 
-- [ ] Unit 03 — Health Validation
 - [ ] Unit 04 — Smart Contract
 - [ ] Unit 05 — Blockchain Integration
 - [ ] Unit 06 — Patient Dashboard
