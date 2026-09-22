@@ -47,28 +47,32 @@ Health-Chain introduces an academic and industrial MVP proving how **off-chain m
 ## Core Architecture & Privacy Invariants
 
 ```text
-┌────────────────────────────────────────────────────────────────────────┐
-│                       USER INTERFACE (React 18 + Vite)                 │
-│   • Patient Portal: Vitals, Consensus Status, On-Chain Recording, Rewards   │
-│   • Insurer Portal: Consent Filter, Smart Premium Underwriting, Claims  │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                    │ HTTP REST API (Proxy: localhost:3000 -> 5000)
-┌───────────────────────────────────▼────────────────────────────────────┐
-│                    BACKEND APPLICATION (Node.js + Express)             │
-│   • Multi-Source Data Ingestion (Fitbit, Smartwatch, Phone)            │
-│   • Statistical Tolerance Engine (Anomaly & Tamper Detection)          │
-│   • Deterministic Canonical Serializer & SHA-256 Hasher                │
-│   • Local Claims Store & In-Memory State Cache                         │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                    │ Ethers.js v6 JSON-RPC (localhost:8545)
-┌───────────────────────────────────▼────────────────────────────────────┐
-│                 ETHEREUM SMART CONTRACT (Solidity 0.8.24)              │
-│   • HealthRecordHashes: Canonical digest ledger                        │
-│   • ConsentManagement: Patient-directed entity permissions             │
-│   • PremiumRules: Dynamic mathematical discount formula                │
-│   • ClaimsLifecycle: Transparent State Machine (Pending/Approved/Reject)│
-│   • WellnessRewards: Idempotent point minting (prevents double-claims) │
-└────────────────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────────────┐
+│                       USER INTERFACE (React 18 + Vite)                    │
+│   • Patient Portal: Vitals, Consensus Status, On-Chain Recording, Rewards │
+│   • Insurer Portal: Consent Filter, Smart Premium Underwriting, Claims    │
+└───────────────────────────────────┬───────────────────────────────────────┘
+                                    │
+                                    │  HTTP REST API (Proxy: localhost:3000 → 5000)
+                                    │
+┌───────────────────────────────────▼───────────────────────────────────────┐
+│                    BACKEND APPLICATION (Node.js + Express)                │
+│   • Multi-Source Data Ingestion (Fitbit, Smartwatch, Phone)               │
+│   • Statistical Tolerance Engine (Anomaly & Tamper Detection)             │
+│   • Deterministic Canonical Serializer & SHA-256 Hasher                   │
+│   • Local Claims Store & In-Memory State Cache                            │
+└───────────────────────────────────┬───────────────────────────────────────┘
+                                    │
+                                    │  Ethers.js v6 JSON-RPC (localhost:8545)
+                                    │
+┌───────────────────────────────────▼───────────────────────────────────────┐
+│                 ETHEREUM SMART CONTRACT (Solidity 0.8.24)                 │
+│   • HealthRecordHashes: Canonical digest ledger                           │
+│   • ConsentManagement: Patient-directed entity permissions                │
+│   • PremiumRules: Dynamic mathematical discount formula                   │
+│   • ClaimsLifecycle: Transparent State Machine (Pending/Approved/Reject)  │
+│   • WellnessRewards: Idempotent point minting (prevents double-claims)    │
+└───────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### The 4 Architectural Invariants
@@ -221,7 +225,7 @@ This section presents the actual running application interfaces captured across 
 | **Date Switcher** | Select between `2026-09-22`, `2026-09-21`, or `2026-09-20 (Anomaly)`. | Demonstrates consistent normal days versus an anti-fraud anomaly test day. |
 | **Daily Consensus Metrics** | Displays verified daily averages (e.g., 10,427 steps, 7.4h sleep). | Aggregated view synthesized across all active wearable devices. |
 | **IoT Device Comparison Table** | Shows raw telemetry side-by-side: *Mock Fitbit*, *Mock Smartwatch*, *Mock Phone*. | Proves cross-device verification. If one device is spoofed or hacked, the discrepancy is exposed immediately. |
-| **Integrity Anomaly Banner** *(on 2026-09-20)* | Bright red alert showing discrepancy percentages. | Demonstrates automated rejection of tampered fitness tracking data. |
+| **Integrity Anomaly Banner** | Bright red alert showing discrepancy percentages. | Demonstrates automated rejection of tampered fitness tracking data. |
 | **Blockchain Cryptographic Proof** | Shows the 64-character canonical SHA-256 digest with **"Record Hash on Blockchain"** button. | Creates an immutable cryptographic proof on Ethereum without exposing private medical details. |
 | **Smart Contract Access Consent** | Toggle button allowing the patient to **Grant** or **Revoke** insurer access on-chain. | Restores data sovereignty to the patient. Access is enforced by smart contract logic, not central servers. |
 | **Wellness Rewards & Points** | Interactive widget showing total points and a **"Claim Points"** button. | Motivates preventative healthy habits with automated points that prevent duplicate claims. |
@@ -245,7 +249,7 @@ This section presents the actual running application interfaces captured across 
 - **Node.js**: v18.x, v20.x, or v24.x installed.
 - **npm**: v9.x or higher installed.
 
-### ⚠️ Windows PowerShell Notice
+### Windows PowerShell Notice
 On Windows, PowerShell restricts the execution of `.ps1` scripts by default. If typing `npm` or `npx` gives a red security error:
 - **Solution A**: Use **`npm.cmd`** and **`npx.cmd`** in PowerShell.
 - **Solution B**: Open standard **Command Prompt (`cmd.exe`)** or **Git Bash**, where standard `npm` and `npx` work without restrictions.
@@ -283,28 +287,28 @@ cd ..
 
 Open **4 separate terminal windows or tabs** and run one command in each:
 
-#### 🖥️ Terminal 1: Start Local Ethereum Node
+#### Terminal 1: Start Local Ethereum Node
 ```powershell
 cd blockchain
 npx.cmd hardhat node
 ```
 *Starts a local JSON-RPC Ethereum blockchain at `http://127.0.0.1:8545` with 20 pre-funded test accounts.*
 
-#### ⛓️ Terminal 2: Deploy Smart Contract
+#### Terminal 2: Deploy Smart Contract
 ```powershell
 cd blockchain
 npx.cmd hardhat run scripts/deploy.cjs --network localhost
 ```
 *Deploys `HealthChain.sol` and automatically exports the contract address (`0x5FbDB...`) and ABI to `backend/src/config/contractConfig.json`.*
 
-#### 🚀 Terminal 3: Start Backend API Server
+#### Terminal 3: Start Backend API Server
 ```powershell
 cd backend
 npm.cmd start
 ```
 *Starts the Express REST API server listening on **http://localhost:5000**.*
 
-#### 💻 Terminal 4: Start Frontend Dev Server
+#### Terminal 4: Start Frontend Dev Server
 ```powershell
 cd frontend
 npm.cmd run dev
@@ -448,6 +452,7 @@ blockchain/
 │   ├── health-records.json               # Multi-device IoT records (Fitbit, Smartwatch, Phone)
 │   ├── policies.json                     # Health insurance policy definitions
 │   └── claims.json                       # Insurance reimbursement claims
+├── screenshots/                          # Visual tour & evaluation walkthrough captures
 └── context/                              # Architectural specification docs
 ```
 
