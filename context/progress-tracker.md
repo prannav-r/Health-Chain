@@ -22,14 +22,14 @@ Update this file after every meaningful implementation change.
 - [x] Unit 04 — Smart Contract (Solidity contract and full Hardhat test suite)
 - [x] Unit 05 — Blockchain Integration (Deploy script, backend ethers service, on-chain endpoints)
 - [x] Unit 06 — Patient Dashboard (Metrics, source comparison, consent toggle, blockchain records, rewards)
+- [x] Unit 07 — Insurance Workflow (Authorized patients, dynamic premium calculation, claims adjudication)
 
 ## In Progress
 
-- [ ] Unit 07 — Insurance Workflow
+- [ ] Unit 08 — Wellness Rewards
 
 ## Next Up
 
-- [ ] Unit 08 — Wellness Rewards
 - [ ] Unit 09 — End-to-End Verification
 
 ## Open Questions

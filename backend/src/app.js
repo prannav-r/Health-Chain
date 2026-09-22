@@ -4,7 +4,13 @@ import {
   getAllPatients,
   getPatientById,
   getHealthRecords,
-  getGroupedSourcesByPatient
+  getGroupedSourcesByPatient,
+  getAllPolicies,
+  getPolicyByPatientId,
+  getAllClaims,
+  getClaimsByPatientId,
+  saveNewClaim,
+  updateClaimStatusInStore
 } from './dataLoader.js';
 import { validatePatientHealthData } from './validation.js';
 import blockchainService from './blockchainService.js';
@@ -254,6 +260,227 @@ app.get('/api/rewards/:patientId', async (req, res) => {
     res.json({ success: true, patientId, rewardPoints: points });
   } catch (err) {
     res.status(500).json({ success: false, error: `Failed to fetch reward points: ${err.message}` });
+  }
+});
+
+// -------------------------------------------------------------
+// Insurance Workflow Endpoints (Unit 07)
+// -------------------------------------------------------------
+
+const DEFAULT_INSURER_ADDRESS = '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC';
+
+// Get list of demo patients who have granted on-chain consent to the insurer
+app.get('/api/insurance/authorized-patients', async (req, res) => {
+  const insurerAddress = req.query.entity || DEFAULT_INSURER_ADDRESS;
+
+  try {
+    const allPatients = await getAllPatients();
+    const authorized = [];
+
+    for (const patient of allPatients) {
+      try {
+        const consentResult = await blockchainService.hasConsent(patient.id, insurerAddress);
+        if (consentResult && consentResult.hasConsent) {
+          authorized.push({
+            ...patient,
+            onChainConsent: true
+          });
+        }
+      } catch {
+        // If query fails, do not authorize
+      }
+    }
+
+    res.json({
+      success: true,
+      insurerAddress,
+      count: authorized.length,
+      data: authorized
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to fetch authorized patients' });
+  }
+});
+
+// Retrieve policy and calculate live smart-contract dynamic premium
+app.get('/api/policies/:patientId', async (req, res) => {
+  const { patientId } = req.params;
+
+  try {
+    const policy = await getPolicyByPatientId(patientId);
+    if (!policy) {
+      return res.status(404).json({ success: false, error: `Policy not found for patient ${patientId}` });
+    }
+
+    // Attempt to fetch latest validated metrics to compute discounted premium
+    let metricsUsed = null;
+    let finalPremium = policy.basePremium || 10000;
+    let discount = 0;
+
+    try {
+      const validationResults = await validatePatientHealthData(patientId, '2026-09-22');
+      if (validationResults.length > 0 && validationResults[0].validated) {
+        metricsUsed = validationResults[0].consensusMetrics;
+        finalPremium = await blockchainService.calculatePremium(
+          metricsUsed.steps,
+          metricsUsed.sleepHours
+        );
+        discount = (policy.basePremium || 10000) - finalPremium;
+      }
+    } catch (err) {
+      console.warn('Could not compute dynamic premium from blockchain:', err.message);
+    }
+
+    res.json({
+      success: true,
+      data: {
+        ...policy,
+        basePremium: policy.basePremium || 10000,
+        finalPremium,
+        discountAmount: discount,
+        discountPercent: Math.round((discount / (policy.basePremium || 10000)) * 100),
+        metricsUsed
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to load policy' });
+  }
+});
+
+// Get all claims or filter by patient
+app.get('/api/claims', async (req, res) => {
+  try {
+    const claims = await getAllClaims();
+    res.json({ success: true, count: claims.length, data: claims });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to load claims' });
+  }
+});
+
+app.get('/api/claims/:patientId', async (req, res) => {
+  const { patientId } = req.params;
+  try {
+    const claims = await getClaimsByPatientId(patientId);
+    res.json({ success: true, patientId, count: claims.length, data: claims });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to load patient claims' });
+  }
+});
+
+// Submit a new claim (records on-chain and in claims store)
+app.post('/api/claims', async (req, res) => {
+  const { policyId, patientId, amount, description } = req.body;
+
+  if (!policyId || !patientId || !amount) {
+    return res.status(400).json({
+      success: false,
+      error: 'policyId, patientId, and amount are required'
+    });
+  }
+
+  try {
+    // 1. Submit to blockchain smart contract
+    let onChainTx = null;
+    try {
+      onChainTx = await blockchainService.submitClaim(
+        policyId,
+        patientId,
+        Number(amount),
+        description || ''
+      );
+    } catch (err) {
+      console.warn('On-chain claim submission notice:', err.message);
+    }
+
+    // 2. Save to local claims store
+    const newClaim = {
+      id: Date.now(),
+      claimCode: `CLM-${Math.floor(1000 + Math.random() * 9000)}`,
+      policyId,
+      patientId,
+      amount: Number(amount),
+      description: description || 'Medical reimbursement claim',
+      status: 'Pending',
+      timestamp: Math.floor(Date.now() / 1000),
+      onChainTxHash: onChainTx?.txHash || null,
+      decisionReason: ''
+    };
+
+    await saveNewClaim(newClaim);
+
+    res.json({
+      success: true,
+      message: 'Claim submitted successfully',
+      data: newClaim
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: `Failed to submit claim: ${err.message}` });
+  }
+});
+
+// Approve a claim
+app.post('/api/claims/:claimId/approve', async (req, res) => {
+  const { claimId } = req.params;
+  const { reason } = req.body;
+
+  try {
+    // Update on-chain if feasible
+    try {
+      await blockchainService.approveClaim(
+        claimId,
+        reason || 'Approved by insurance adjudicator'
+      );
+    } catch (err) {
+      console.warn('On-chain approve notice:', err.message);
+    }
+
+    // Update in claims store
+    const updatedClaim = await updateClaimStatusInStore(
+      claimId,
+      'Approved',
+      reason || 'Approved by insurance adjudicator'
+    );
+
+    res.json({
+      success: true,
+      message: 'Claim approved successfully',
+      data: updatedClaim
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: `Failed to approve claim: ${err.message}` });
+  }
+});
+
+// Reject a claim
+app.post('/api/claims/:claimId/reject', async (req, res) => {
+  const { claimId } = req.params;
+  const { reason } = req.body;
+
+  try {
+    // Update on-chain if feasible
+    try {
+      await blockchainService.rejectClaim(
+        claimId,
+        reason || 'Rejected by insurance adjudicator'
+      );
+    } catch (err) {
+      console.warn('On-chain reject notice:', err.message);
+    }
+
+    // Update in claims store
+    const updatedClaim = await updateClaimStatusInStore(
+      claimId,
+      'Rejected',
+      reason || 'Not covered under policy terms'
+    );
+
+    res.json({
+      success: true,
+      message: 'Claim rejected',
+      data: updatedClaim
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: `Failed to reject claim: ${err.message}` });
   }
 });
 

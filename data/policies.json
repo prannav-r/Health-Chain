@@ -1,0 +1,32 @@
+[
+  {
+    "policyId": "POL-1001",
+    "patientId": "P001",
+    "planName": "Comprehensive HealthShield Gold",
+    "basePremium": 10000,
+    "coverageAmount": 500000,
+    "copayPercent": 10,
+    "status": "Active",
+    "startDate": "2026-01-01"
+  },
+  {
+    "policyId": "POL-1002",
+    "patientId": "P002",
+    "planName": "ActiveLife Guard Plus",
+    "basePremium": 10000,
+    "coverageAmount": 400000,
+    "copayPercent": 15,
+    "status": "Active",
+    "startDate": "2026-01-01"
+  },
+  {
+    "policyId": "POL-1003",
+    "patientId": "P003",
+    "planName": "Standard Health Protect",
+    "basePremium": 10000,
+    "coverageAmount": 300000,
+    "copayPercent": 20,
+    "status": "Active",
+    "startDate": "2026-01-01"
+  }
+]

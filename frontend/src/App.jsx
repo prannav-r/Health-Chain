@@ -6,11 +6,13 @@ import BlockchainRecord from './components/BlockchainRecord.jsx';
 import WellnessCard from './components/WellnessCard.jsx';
 import PatientSelector from './components/PatientSelector.jsx';
 import StatusBadge from './components/StatusBadge.jsx';
+import InsuranceDashboard from './components/InsuranceDashboard.jsx';
 
 const DEFAULT_INSURER = '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC';
 const AVAILABLE_DATES = ['2026-09-22', '2026-09-21', '2026-09-20'];
 
 export default function App() {
+  const [portalMode, setPortalMode] = useState('patient'); // 'patient' | 'insurer'
   const [patients, setPatients] = useState([]);
   const [selectedPatientId, setSelectedPatientId] = useState('P001');
   const [selectedDate, setSelectedDate] = useState('2026-09-22');
@@ -175,16 +177,46 @@ export default function App() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <StatusBadge
-            status="Patient Portal Active"
-            type="info"
-            label="Patient View"
-          />
+          <div style={{ display: 'inline-flex', backgroundColor: '#E2E8F0', padding: '3px', borderRadius: '8px' }}>
+            <button
+              id="switch-to-patient-portal"
+              className="btn"
+              style={{
+                padding: '6px 14px',
+                fontSize: '13px',
+                borderRadius: '6px',
+                backgroundColor: portalMode === 'patient' ? '#FFFFFF' : 'transparent',
+                color: portalMode === 'patient' ? 'var(--primary)' : 'var(--muted)',
+                boxShadow: portalMode === 'patient' ? 'var(--shadow-sm)' : 'none',
+                fontWeight: portalMode === 'patient' ? 600 : 500
+              }}
+              onClick={() => setPortalMode('patient')}
+            >
+              👤 Patient Portal
+            </button>
+            <button
+              id="switch-to-insurer-portal"
+              className="btn"
+              style={{
+                padding: '6px 14px',
+                fontSize: '13px',
+                borderRadius: '6px',
+                backgroundColor: portalMode === 'insurer' ? '#FFFFFF' : 'transparent',
+                color: portalMode === 'insurer' ? 'var(--primary)' : 'var(--muted)',
+                boxShadow: portalMode === 'insurer' ? 'var(--shadow-sm)' : 'none',
+                fontWeight: portalMode === 'insurer' ? 600 : 500
+              }}
+              onClick={() => setPortalMode('insurer')}
+            >
+              🏢 Insurer Portal
+            </button>
+          </div>
+
           {blockchainInfo?.connected ? (
             <StatusBadge
               status="Connected"
               type="success"
-              label={`Hardhat Node (${blockchainInfo.network})`}
+              label={`Node (${blockchainInfo.network})`}
             />
           ) : (
             <StatusBadge
@@ -196,96 +228,102 @@ export default function App() {
         </div>
       </header>
 
-      {/* Patient & Date Selection */}
-      <PatientSelector
-        patients={patients}
-        selectedPatientId={selectedPatientId}
-        onSelectPatient={setSelectedPatientId}
-        availableDates={AVAILABLE_DATES}
-        selectedDate={selectedDate}
-        onSelectDate={setSelectedDate}
-        currentPatient={currentPatient}
-      />
+      {portalMode === 'insurer' ? (
+        <InsuranceDashboard />
+      ) : (
+        <>
+          {/* Patient & Date Selection */}
+          <PatientSelector
+            patients={patients}
+            selectedPatientId={selectedPatientId}
+            onSelectPatient={setSelectedPatientId}
+            availableDates={AVAILABLE_DATES}
+            selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
+            currentPatient={currentPatient}
+          />
 
-      {error && (
-        <div
-          className="card"
-          style={{ backgroundColor: 'var(--danger-bg)', borderColor: '#FECACA', color: 'var(--danger)' }}
-        >
-          <strong>Error loading telemetry:</strong> {error}
-        </div>
+          {error && (
+            <div
+              className="card"
+              style={{ backgroundColor: 'var(--danger-bg)', borderColor: '#FECACA', color: 'var(--danger)' }}
+            >
+              <strong>Error loading telemetry:</strong> {error}
+            </div>
+          )}
+
+          {/* Health Metrics Dashboard */}
+          <section style={{ marginBottom: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text)' }}>
+                Daily Consensus Metrics ({selectedDate})
+              </h2>
+              <span style={{ fontSize: '13px', color: 'var(--muted)' }}>
+                {validationResult?.validated
+                  ? 'Computed via cross-device consensus'
+                  : 'Discrepancy detected between sources'}
+              </span>
+            </div>
+
+            <div className="grid">
+              <MetricCard
+                title="Daily Steps"
+                value={consensus?.steps ?? (sources[0]?.steps || null)}
+                unit="steps"
+                icon="🏃"
+                subtitle={validationResult?.validated ? 'Target: ≥ 10,000 steps' : 'Unverified reading'}
+                qualifiesDiscount={(consensus?.steps || 0) >= 10000}
+              />
+              <MetricCard
+                title="Heart Rate"
+                value={consensus?.heartRate ?? (sources[0]?.heartRate || null)}
+                unit="bpm"
+                icon="💓"
+                subtitle="Resting average"
+              />
+              <MetricCard
+                title="Sleep Duration"
+                value={consensus?.sleepHours ?? (sources[0]?.sleepHours || null)}
+                unit="hours"
+                icon="🌙"
+                subtitle={validationResult?.validated ? 'Target: ≥ 7.0 hours' : 'Unverified reading'}
+                qualifiesDiscount={(consensus?.sleepHours || 0) >= 7.0}
+              />
+              <MetricCard
+                title="Active Burn"
+                value={consensus?.calories ?? (sources[0]?.calories || null)}
+                unit="kcal"
+                icon="🔥"
+                subtitle="Consensus calories"
+              />
+            </div>
+          </section>
+
+          {/* Multi-Source Comparison */}
+          <SourceComparison sources={sources} validationResult={validationResult} />
+
+          {/* Blockchain Record & Cryptographic Proof */}
+          <BlockchainRecord
+            patientId={selectedPatientId}
+            date={selectedDate}
+            validationResult={validationResult}
+            onChainRecord={onChainRecord}
+            onRecordToBlockchain={handleRecordToBlockchain}
+            loading={loading}
+          />
+
+          {/* Insurance Consent & Wellness Rewards in 2 columns */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '20px' }}>
+            <ConsentToggle
+              patientId={selectedPatientId}
+              hasConsent={hasConsent}
+              onToggle={handleToggleConsent}
+              loading={loading}
+            />
+            <WellnessCard points={rewardPoints} />
+          </div>
+        </>
       )}
-
-      {/* Health Metrics Dashboard */}
-      <section style={{ marginBottom: '24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text)' }}>
-            Daily Consensus Metrics ({selectedDate})
-          </h2>
-          <span style={{ fontSize: '13px', color: 'var(--muted)' }}>
-            {validationResult?.validated
-              ? 'Computed via cross-device consensus'
-              : 'Discrepancy detected between sources'}
-          </span>
-        </div>
-
-        <div className="grid">
-          <MetricCard
-            title="Daily Steps"
-            value={consensus?.steps ?? (sources[0]?.steps || null)}
-            unit="steps"
-            icon="🏃"
-            subtitle={validationResult?.validated ? 'Target: ≥ 10,000 steps' : 'Unverified reading'}
-            qualifiesDiscount={(consensus?.steps || 0) >= 10000}
-          />
-          <MetricCard
-            title="Heart Rate"
-            value={consensus?.heartRate ?? (sources[0]?.heartRate || null)}
-            unit="bpm"
-            icon="💓"
-            subtitle="Resting average"
-          />
-          <MetricCard
-            title="Sleep Duration"
-            value={consensus?.sleepHours ?? (sources[0]?.sleepHours || null)}
-            unit="hours"
-            icon="🌙"
-            subtitle={validationResult?.validated ? 'Target: ≥ 7.0 hours' : 'Unverified reading'}
-            qualifiesDiscount={(consensus?.sleepHours || 0) >= 7.0}
-          />
-          <MetricCard
-            title="Active Burn"
-            value={consensus?.calories ?? (sources[0]?.calories || null)}
-            unit="kcal"
-            icon="🔥"
-            subtitle="Consensus calories"
-          />
-        </div>
-      </section>
-
-      {/* Multi-Source Comparison */}
-      <SourceComparison sources={sources} validationResult={validationResult} />
-
-      {/* Blockchain Record & Cryptographic Proof */}
-      <BlockchainRecord
-        patientId={selectedPatientId}
-        date={selectedDate}
-        validationResult={validationResult}
-        onChainRecord={onChainRecord}
-        onRecordToBlockchain={handleRecordToBlockchain}
-        loading={loading}
-      />
-
-      {/* Insurance Consent & Wellness Rewards in 2 columns */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '20px' }}>
-        <ConsentToggle
-          patientId={selectedPatientId}
-          hasConsent={hasConsent}
-          onToggle={handleToggleConsent}
-          loading={loading}
-        />
-        <WellnessCard points={rewardPoints} />
-      </div>
     </div>
   );
 }

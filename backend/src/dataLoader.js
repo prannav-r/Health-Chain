@@ -69,3 +69,69 @@ export async function getGroupedSourcesByPatient(patientId, date = null) {
 
   return Object.values(grouped);
 }
+
+/**
+ * Retrieve all policies.
+ */
+export async function getAllPolicies() {
+  return await loadJson('policies.json');
+}
+
+/**
+ * Retrieve policy for a patient.
+ * @param {string} patientId 
+ */
+export async function getPolicyByPatientId(patientId) {
+  const policies = await getAllPolicies();
+  return policies.find((p) => p.patientId === patientId) || null;
+}
+
+/**
+ * Retrieve all claims.
+ */
+export async function getAllClaims() {
+  return await loadJson('claims.json');
+}
+
+/**
+ * Retrieve claims for a specific patient.
+ * @param {string} patientId 
+ */
+export async function getClaimsByPatientId(patientId) {
+  const claims = await getAllClaims();
+  return claims.filter((c) => c.patientId === patientId);
+}
+
+/**
+ * Save a new claim into claims.json.
+ * @param {object} claim 
+ */
+export async function saveNewClaim(claim) {
+  const claims = await getAllClaims();
+  claims.push(claim);
+  const filePath = path.join(DATA_DIR, 'claims.json');
+  await fs.writeFile(filePath, JSON.stringify(claims, null, 2), 'utf-8');
+  return claim;
+}
+
+/**
+ * Update claim status in claims.json.
+ * @param {number|string} claimId 
+ * @param {string} status 
+ * @param {string} decisionReason 
+ */
+export async function updateClaimStatusInStore(claimId, status, decisionReason = '') {
+  const claims = await getAllClaims();
+  const idNum = Number(claimId);
+  const claim = claims.find((c) => c.id === idNum || c.id === claimId);
+  if (!claim) {
+    throw new Error(`Claim ${claimId} not found`);
+  }
+  claim.status = status;
+  claim.decisionReason = decisionReason;
+  claim.resolvedAt = Math.floor(Date.now() / 1000);
+
+  const filePath = path.join(DATA_DIR, 'claims.json');
+  await fs.writeFile(filePath, JSON.stringify(claims, null, 2), 'utf-8');
+  return claim;
+}
