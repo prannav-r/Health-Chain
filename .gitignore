@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Environment variables & secrets
+.env
+.env.*
+*.env
+!.env.example
+
+# Build outputs
+dist/
+*/dist/
+build/
+*/build/
+
+# Hardhat & Blockchain
+blockchain/artifacts/
+blockchain/cache/
+blockchain/typechain-types/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# OS artifacts
+.DS_Store
+Thumbs.db

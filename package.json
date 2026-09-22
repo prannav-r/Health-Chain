@@ -1,0 +1,24 @@
+{
+  "name": "health-chain",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Health-Chain MVP: Health data validation, blockchain hashes, consent, insurance, and rewards",
+  "scripts": {
+    "dev:backend": "npm.cmd --prefix backend run dev",
+    "start:backend": "npm.cmd --prefix backend start",
+    "dev:frontend": "npm.cmd --prefix frontend run dev",
+    "build:frontend": "npm.cmd --prefix frontend run build",
+    "compile:contracts": "npm.cmd --prefix blockchain run compile",
+    "test:contracts": "npm.cmd --prefix blockchain test"
+  },
+  "keywords": [
+    "blockchain",
+    "healthcare",
+    "ethereum",
+    "solidity",
+    "react",
+    "express"
+  ],
+  "author": "",
+  "license": "MIT"
+}
