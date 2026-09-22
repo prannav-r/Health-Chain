@@ -483,6 +483,7 @@ app.post('/api/claims', async (req, res) => {
     // 2. Save to local claims store
     const newClaim = {
       id: Date.now(),
+      onChainClaimId: onChainTx?.claimId || null,
       claimCode: `CLM-${Math.floor(1000 + Math.random() * 9000)}`,
       policyId,
       patientId,
@@ -512,14 +513,20 @@ app.post('/api/claims/:claimId/approve', async (req, res) => {
   const { reason } = req.body;
 
   try {
+    const allClaims = await getAllClaims();
+    const existingClaim = allClaims.find((c) => String(c.id) === String(claimId));
+    const targetOnChainId = existingClaim?.onChainClaimId || (Number(claimId) < 1000000 ? Number(claimId) : null);
+
     // Update on-chain if feasible
-    try {
-      await blockchainService.approveClaim(
-        claimId,
-        reason || 'Approved by insurance adjudicator'
-      );
-    } catch (err) {
-      console.warn('On-chain approve notice:', err.message);
+    if (targetOnChainId) {
+      try {
+        await blockchainService.approveClaim(
+          targetOnChainId,
+          reason || 'Approved by insurance adjudicator'
+        );
+      } catch (err) {
+        console.warn(`On-chain approve notice for claim ${claimId}:`, err.reason || err.shortMessage || err.message);
+      }
     }
 
     // Update in claims store
@@ -545,14 +552,20 @@ app.post('/api/claims/:claimId/reject', async (req, res) => {
   const { reason } = req.body;
 
   try {
+    const allClaims = await getAllClaims();
+    const existingClaim = allClaims.find((c) => String(c.id) === String(claimId));
+    const targetOnChainId = existingClaim?.onChainClaimId || (Number(claimId) < 1000000 ? Number(claimId) : null);
+
     // Update on-chain if feasible
-    try {
-      await blockchainService.rejectClaim(
-        claimId,
-        reason || 'Rejected by insurance adjudicator'
-      );
-    } catch (err) {
-      console.warn('On-chain reject notice:', err.message);
+    if (targetOnChainId) {
+      try {
+        await blockchainService.rejectClaim(
+          targetOnChainId,
+          reason || 'Rejected by insurance adjudicator'
+        );
+      } catch (err) {
+        console.warn(`On-chain reject notice for claim ${claimId}:`, err.reason || err.shortMessage || err.message);
+      }
     }
 
     // Update in claims store

@@ -219,10 +219,27 @@ class BlockchainService {
     if (!this.contract) throw new Error('Contract not initialized');
     const tx = await this.contract.submitClaim(policyId, patientId, amount, description);
     const receipt = await tx.wait();
+
+    let onChainClaimId = null;
+    if (receipt && receipt.logs) {
+      for (const log of receipt.logs) {
+        try {
+          const parsed = this.contract.interface.parseLog(log);
+          if (parsed && parsed.name === 'ClaimSubmitted') {
+            onChainClaimId = Number(parsed.args.claimId ?? parsed.args[0]);
+            break;
+          }
+        } catch {
+          // Non-contract log or different event
+        }
+      }
+    }
+
     return {
       success: true,
       txHash: tx.hash,
-      blockNumber: receipt.blockNumber
+      blockNumber: receipt.blockNumber,
+      claimId: onChainClaimId
     };
   }
 
