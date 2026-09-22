@@ -6,6 +6,7 @@ import {
   getHealthRecords,
   getGroupedSourcesByPatient
 } from './dataLoader.js';
+import { validatePatientHealthData } from './validation.js';
 
 const app = express();
 
@@ -88,6 +89,30 @@ app.get('/api/health/:patientId/sources', async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ success: false, error: 'Failed to load source comparison data' });
+  }
+});
+
+// Validate multi-source health records and compute canonical hash (optional query: ?date=YYYY-MM-DD)
+app.get('/api/health/:patientId/validation', async (req, res) => {
+  const { patientId } = req.params;
+  const { date } = req.query;
+
+  try {
+    const patient = await getPatientById(patientId);
+    if (!patient) {
+      return res.status(404).json({ success: false, error: `Patient ${patientId} not found` });
+    }
+
+    const validationResults = await validatePatientHealthData(patientId, date);
+    res.json({
+      success: true,
+      patientId,
+      filterDate: date || null,
+      count: validationResults.length,
+      data: validationResults
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to perform health data validation' });
   }
 });
 

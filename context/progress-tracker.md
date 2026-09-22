@@ -18,14 +18,14 @@ Update this file after every meaningful implementation change.
 - [x] Build plan created
 - [x] Unit 01 — Project Foundation (React frontend, Express backend, Hardhat workspace)
 - [x] Unit 02 — Mock Health Data (Patients and multi-source health records API)
+- [x] Unit 03 — Health Validation (Multi-source comparison, deterministic hashing, SHA-256)
 
 ## In Progress
 
-- [ ] Unit 03 — Health Validation
+- [ ] Unit 04 — Smart Contract
 
 ## Next Up
 
-- [ ] Unit 04 — Smart Contract
 - [ ] Unit 05 — Blockchain Integration
 - [ ] Unit 06 — Patient Dashboard
 - [ ] Unit 07 — Insurance Workflow
