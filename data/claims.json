@@ -6,9 +6,10 @@
     "policyId": "POL-1001",
     "amount": 2500,
     "description": "Sports injury assessment & physiotherapy session",
-    "status": "Pending",
+    "status": "Approved",
     "timestamp": 1758500000,
-    "decisionReason": ""
+    "decisionReason": "Verified against verified health records and policy criteria",
+    "resolvedAt": 1790059620
   },
   {
     "id": 2,
@@ -20,5 +21,18 @@
     "status": "Approved",
     "timestamp": 1758410000,
     "decisionReason": "Pre-approved under preventive health allowance"
+  },
+  {
+    "id": 1790059611130,
+    "claimCode": "CLM-6053",
+    "policyId": "POL-1001",
+    "patientId": "P001",
+    "amount": 4000,
+    "description": "Diagnostic lab panel and specialist consult",
+    "status": "Rejected",
+    "timestamp": 1790059611,
+    "onChainTxHash": "0xe8f9b4ee49a001890671929f72e0354b89c4b5a3878243ad9562b593af6a41a4",
+    "decisionReason": "Claim documentation does not satisfy policy guidelines",
+    "resolvedAt": 1790059674
   }
 ]

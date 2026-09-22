@@ -25,6 +25,7 @@ Update this file after every meaningful implementation change.
 - [x] Unit 07 — Insurance Workflow (Authorized patients, dynamic premium calculation, claims adjudication)
 - [x] Unit 08 — Wellness Rewards (Deterministic points calculation, idempotent claiming, UI)
 - [x] Unit 09 — End-to-End Verification (12-step demo flow suite, all tests passing, full README)
+- [x] Visual Tour & System Screenshots (Annotated walkthrough of screenshots 1–7 embedded in README)
 
 ## In Progress
 

@@ -1,27 +1,28 @@
 # Health-Chain 🏥⛓️
 > **Decentralized, Privacy-Preserving Health Data Validation & Dynamic Insurance Platform**
 
-[![Tests](https://img.shields.io/badge/Tests-62%2F62%20Passing-brightgreen.svg)](#automated-testing-suite)
-[![Solidity](https://img.shields.io/badge/Solidity-0.8.24-363636.svg?logo=solidity)](https://soliditylang.org/)
-[![React](https://img.shields.io/badge/React-18-61DAFB.svg?logo=react&logoColor=black)](https://react.dev/)
-[![Express](https://img.shields.io/badge/Backend-Node.js%20Express-black.svg?logo=node.js)](https://expressjs.com/)
-[![Ethers](https://img.shields.io/badge/Web3-Ethers.js%20v6-blue.svg)](https://docs.ethers.org/v6/)
-[![Hardhat](https://img.shields.io/badge/Blockchain-Hardhat-yellow.svg)](https://hardhat.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
 
 ## Table of Contents
 1. [Executive Summary & Problem Statement](#executive-summary--problem-statement)
 2. [Core Architecture & Privacy Invariants](#core-architecture--privacy-invariants)
-3. [Feature Guide: What You See on the Screen](#feature-guide-what-you-see-on-the-screen)
-4. [Prerequisites & Windows Setup Notice](#prerequisites--windows-setup-notice)
-5. [Quickstart: How to Run the Project](#quickstart-how-to-run-the-project)
-6. [12-Step Evaluation & Presentation Walkthrough](#12-step-evaluation--presentation-walkthrough)
-7. [Automated Testing Suite (62 Tests)](#automated-testing-suite)
-8. [Complete REST API Reference](#complete-rest-api-reference)
-9. [Troubleshooting & FAQs](#troubleshooting--faqs)
-10. [Repository Structure](#repository-structure)
+3. [Visual Tour & System Screenshots](#visual-tour--system-screenshots)
+   - [1. Patient Portal — Multi-Device Telemetry Consensus](#1-patient-portal--multi-device-telemetry-consensus)
+   - [2. Patient Portal — Cryptographic Proof & On-Chain Consent](#2-patient-portal--cryptographic-proof--on-chain-consent)
+   - [3. Anti-Spoofing — Anomaly Detection Banner](#3-anti-spoofing--anomaly-detection-banner)
+   - [4. Integrity Enforcement — Blocked On-Chain Commit](#4-integrity-enforcement--blocked-on-chain-commit)
+   - [5. Insurer Portal — Consent Filter & Dynamic Premium](#5-insurer-portal--consent-filter--dynamic-premium)
+   - [6. Claims Submission Modal](#6-claims-submission-modal)
+   - [7. Policy Claims Adjudication & Audit Trail](#7-policy-claims-adjudication--audit-trail)
+4. [Feature Guide: What You See on the Screen](#feature-guide-what-you-see-on-the-screen)
+5. [Prerequisites & Windows Setup Notice](#prerequisites--windows-setup-notice)
+6. [Quickstart: How to Run the Project](#quickstart-how-to-run-the-project)
+7. [12-Step Evaluation & Presentation Walkthrough](#12-step-evaluation--presentation-walkthrough)
+8. [Automated Testing Suite (62 Tests)](#automated-testing-suite)
+9. [Complete REST API Reference](#complete-rest-api-reference)
+10. [Troubleshooting & FAQs](#troubleshooting--faqs)
+11. [Repository Structure](#repository-structure)
 
 ---
 
@@ -75,6 +76,138 @@ Health-Chain introduces an academic and industrial MVP proving how **off-chain m
 2. **The Integrity Invariant**: If telemetry from any wearable device exceeds statistical tolerance limits (e.g. outlier steps), the backend classifies the day as an **Integrity Anomaly** and **strictly forbids** writing to the blockchain.
 3. **The Consent Invariant**: An insurer cannot query a patient's policy or records unless `hasConsent(patientId, insurerAddress)` returns `true` on the smart contract.
 4. **The Idempotency Invariant**: Wellness rewards use a deterministic key (`keccak256(patientId, date)`) ensuring a patient can only claim rewards once per valid calendar date.
+
+---
+
+## Visual Tour & System Screenshots
+
+This section presents the actual running application interfaces captured across the end-to-end user flows, detailing what each view represents, its underlying cryptographic mechanism, and its purpose in the architecture.
+
+---
+
+### 1. Patient Portal — Multi-Device Telemetry Consensus
+![Patient Portal Consensus Metrics](screenshots/1.png)
+
+- **What You See**:
+  - The top section of the **Patient Portal** for policyholder `P001` (*Aarav Sharma*) on date `2026-09-22`.
+  - **Daily Consensus Metrics**: Verified multi-source averages displaying **10,427 steps** (with a green *"Discount Qualified"* milestone badge), **72 bpm resting heart rate** (*Normal*), **7.4h sleep duration** (*Discount Qualified*), and **2,350 kcal** active burn.
+  - **Multi-Source IoT Device Breakdown**: A green *"3/3 Sources Consistent"* badge verifying telemetry from three independent devices:
+    - **Mock Fitbit**: 10,450 steps, 71 bpm, 7.5h sleep
+    - **Mock Smartwatch**: 10,380 steps, 73 bpm, 7.3h sleep
+    - **Mock Phone**: 10,450 steps, 72 bpm, 7.4h sleep
+- **Under the Hood**:
+  - The backend statistical tolerance engine collects telemetry from independent IoT inputs and cross-evaluates them:
+    $$\text{Tolerance: } \pm10\% \text{ for steps, } \pm1.0\text{h for sleep duration}$$
+  - Because discrepancies are $< 1\%$, the engine synthesizes an arithmetic consensus mean and serializes the dataset into deterministic canonical JSON keys.
+- **Why It Matters**:
+  - **Eliminates Single-Point Vulnerability**: A single malfunctioning tracker or rogue phone cannot distort verified health habits.
+
+---
+
+### 2. Patient Portal — Cryptographic Proof & On-Chain Consent
+![Patient Portal Cryptographic Proof & Consent](screenshots/2.png)
+
+- **What You See**:
+  - The bottom section of the **Patient Portal** on a valid day (`2026-09-22`).
+  - **Cryptographic Proof Card**: The 64-character deterministic SHA-256 digest (`09c687ad04838b9d3ff07aa8ce833ff32943eb9c5950d405fb559779df3ce33a`) confirmed with green status **"Committed to Blockchain (Block #2)"**.
+  - **Smart Contract Access Consent Card**: Displays active authorization for insurer address `0x70997970C51812dc3A010C7d01b50e0d17dc79C8` with status **"Access Granted"** and an on-demand **"Revoke Consent"** button.
+  - **Wellness Rewards & Points Widget**: Confirms **150 PTS** awarded with status **"Claimed On-Chain"**.
+- **Under the Hood**:
+  - **The Privacy Invariant**: The SHA-256 digest is generated off-chain. The `recordDailyConsensus(patientId, date, hash)` method commits only this 32-byte digest to Ethereum. **No personal biometrics touch the public ledger.**
+  - **The Consent Invariant**: Access permission is written directly to the `consents[patientId][insurer]` mapping in Solidity.
+  - **The Idempotency Invariant**: Rewards are keyed to `keccak256(abi.encodePacked(patientId, date))`, ensuring wellness points can only be minted once per calendar day.
+- **Why It Matters**:
+  - Delivers full HIPAA & GDPR compliance with cryptographic integrity proofs while giving patients absolute sovereignty to revoke insurer access at will.
+
+---
+
+### 3. Anti-Spoofing — Anomaly Detection Banner
+![Anti-Spoofing Anomaly Banner](screenshots/3.png)
+
+- **What You See**:
+  - The Patient Portal after selecting date `2026-09-20 (Anomaly)`.
+  - A prominent red warning banner: **"⚠️ Integrity Anomaly Detected — Not eligible for on-chain recording"**.
+  - Detailed mathematical diagnosis: *"Step discrepancy across devices exceeds tolerance (Mock Fitbit: 14,200 vs Mock Phone: 5,925, max discrepancy 139.6% > allowed 10.0%)"*.
+  - Device breakdown table showing that the Fitbit tracked 14,200 steps while the Phone only tracked 5,925 steps.
+- **Under the Hood**:
+  - The cross-validation engine computes the relative discrepancy across reporting devices:
+    $$\text{Discrepancy} = \frac{\max(\text{steps}) - \min(\text{steps})}{\min(\text{steps})} = \frac{14,200 - 5,925}{5,925} = 139.66\%$$
+  - Since $139.66\% \gg 10.0\%$, the statistical tolerance engine flags the record as invalid (`valid: false`).
+- **Why It Matters**:
+  - **Defeats Pedometer Shaking Fraud**: Policyholders cannot artificially inflate steps on an isolated wristband while their phone sits stationary to fraudulently obtain discounts.
+
+---
+
+### 4. Integrity Enforcement — Blocked On-Chain Commit
+![Integrity Invariant Enforcement](screenshots/4.png)
+
+- **What You See**:
+  - The bottom section of the Patient Portal for the anomalous date (`2026-09-20`).
+  - **Cryptographic Proof Card**: The SHA-256 hash is computed for local audit verification, but its status is marked **"Rejected (Integrity Anomaly)"**.
+  - The submission button is disabled and locked: **"Cannot Record — Integrity Anomaly Detected"**.
+  - **Wellness Rewards Card**: Balance displays **0 PTS** with notice *"Not Eligible — Integrity Anomaly Detected"*, and the claim button is disabled.
+- **Under the Hood**:
+  - **The Integrity Invariant**: The backend endpoint `/api/health/:patientId/record` validates data integrity prior to invoking Ethers.js. When discrepancy exceeds tolerance, it rejects the request with HTTP 400.
+  - No Ethereum gas is spent, and the unverified digest is strictly prevented from entering the smart contract ledger.
+- **Why It Matters**:
+  - Protects the blockchain state from pollution by corrupted or spoofed data, ensuring insurance underwriters can trust every hash stored on-chain.
+
+---
+
+### 5. Insurer Portal — Consent Filter & Dynamic Premium
+![Insurer Portal Dynamic Underwriting](screenshots/5.png)
+
+- **What You See**:
+  - The **Insurer Portal** view (`http://localhost:3000` $\rightarrow$ *"Insurer Portal"*).
+  - **Authorized Consenting Patients**: Dropdown displays only `P001: Aarav Sharma`. Other patients (`P002`, `P003`) are omitted because they have not granted on-chain consent.
+  - **Smart Contract Dynamic Premium Underwriting**:
+    - Policy: `POL-001` (Comprehensive Health Plus)
+    - Base Annual Premium: **₹10,000**
+    - Verified Step Milestone ($\ge$ 10,000 steps): **-10% (-₹1,000)**
+    - Verified Sleep Milestone ($\ge$ 7.0h sleep): **-5% (-₹500)**
+    - Total Discount Applied: **15% (-₹1,500)**
+    - **Final Dynamic Premium**: **₹8,500**
+  - **Policy Claims Table**: Displays pending reimbursement claim `CLM-1001` (₹4,000) with `[Approve]` and `[Reject]` action buttons.
+- **Under the Hood**:
+  - The backend route `/api/insurance/authorized-patients` filters records by executing `hasConsent(patientId, insurerAddress)` on the smart contract.
+  - The dynamic premium formula computes discounts based on validated milestone thresholds committed on-chain.
+- **Why It Matters**:
+  - Guarantees that insurers cannot spy on non-consenting users and transforms insurance from static, opaque pricing into transparent, algorithmically discounted premiums.
+
+---
+
+### 6. Claims Submission Modal
+![Claim Submission Modal](screenshots/6.png)
+
+- **What You See**:
+  - The modal dialog triggered by clicking **"+ New Claim"**.
+  - Form Fields:
+    - **Patient**: `Aarav Sharma (P001)`
+    - **Policy ID**: `POL-001`
+    - **Claim Amount (₹)**: `4000`
+    - **Medical Description**: *"Diagnostic lab panel and specialist consult"*
+  - Action Buttons: *"Cancel"* and *"Submit Claim to Blockchain"*.
+- **Under the Hood**:
+  - Submitting sends a `POST` request to `/api/claims`.
+  - The backend initiates an on-chain transaction calling `submitClaim(claimId, policyId, patientId, amount, description)` on `HealthChain.sol`.
+  - The contract initializes the claim with state `ClaimStatus.Pending` and broadcasts an immutable `ClaimSubmitted` event on Ethereum.
+- **Why It Matters**:
+  - Replaces paper trails and opaque insurance backoffices with an immutable, transparent on-chain filing timestamp.
+
+---
+
+### 7. Policy Claims Adjudication & Audit Trail
+![Claims Adjudication Audit Trail](screenshots/7.png)
+
+- **What You See**:
+  - The resolved insurance claims audit table in the Insurer Portal.
+  - **Approved Claim**: `CLM-1001` | Aarav Sharma | ₹4,000 | Diagnostic lab panel and specialist consult | Status: **Approved** (Green Badge) | Note: *"Verified under preventative care benefits"*.
+  - **Rejected Claim**: `CLM-6053` | Aarav Sharma | ₹15,000 | Unapproved elective cosmetic consultation | Status: **Rejected** (Red Badge) | Note: *"Claim documentation does not satisfy policy guidelines"*.
+- **Under the Hood**:
+  - Adjudicator decisions execute `approveClaim(claimId, reason)` or `rejectClaim(claimId, reason)` on the smart contract.
+  - The contract transitions claim state (`Pending` $\rightarrow$ `Approved` or `Rejected`) and emits `ClaimApproved` or `ClaimRejected` events containing the mandatory explanation reason.
+- **Why It Matters**:
+  - Protects policyholders against arbitrary, unexplained rejections by binding every insurer decision and reason to an immutable distributed ledger.
 
 ---
 
