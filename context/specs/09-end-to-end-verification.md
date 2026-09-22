@@ -21,11 +21,11 @@ Verify the complete demo flow from mock health data through blockchain recording
 
 ## Verify when done
 
-- [ ] Full demo works from a clean start.
-- [ ] No paid service is required.
-- [ ] No real patient data is present.
-- [ ] No private keys are committed.
-- [ ] Frontend has no console errors during normal flow.
-- [ ] Backend returns expected responses.
-- [ ] Smart-contract tests pass.
-- [ ] README contains setup and demo instructions.
+- [x] Full demo works from a clean start.
+- [x] No paid service is required.
+- [x] No real patient data is present.
+- [x] No private keys are committed.
+- [x] Frontend has no console errors during normal flow.
+- [x] Backend returns expected responses.
+- [x] Smart-contract tests pass.
+- [x] README contains setup and demo instructions.

@@ -3,12 +3,26 @@ import assert from 'node:assert';
 import app from '../src/app.js';
 import blockchainService from '../src/blockchainService.js';
 
+import fs from 'fs/promises';
+import path from 'path';
+
 test('Unit 07 Insurance Workflow Test Suite', async (t) => {
   const server = app.listen(0);
   const port = server.address().port;
   const baseUrl = `http://localhost:${port}`;
 
+  const claimsPath = path.resolve(process.cwd(), '../data/claims.json');
+  let originalClaimsData = '';
+  try {
+    originalClaimsData = await fs.readFile(claimsPath, 'utf-8');
+  } catch {}
+
   t.after(async () => {
+    if (originalClaimsData) {
+      try {
+        await fs.writeFile(claimsPath, originalClaimsData, 'utf-8');
+      } catch {}
+    }
     await new Promise((resolve) => server.close(resolve));
   });
 

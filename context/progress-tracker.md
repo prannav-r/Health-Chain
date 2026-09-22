@@ -4,11 +4,11 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- Project planning / foundation
+- Complete / Ready for Evaluation & Presentation
 
 ## Current Goal
 
-- Create the Health-Chain MVP according to the build plan.
+- All 9 build units implemented, tested, and verified.
 
 ## Completed
 
@@ -24,14 +24,15 @@ Update this file after every meaningful implementation change.
 - [x] Unit 06 — Patient Dashboard (Metrics, source comparison, consent toggle, blockchain records, rewards)
 - [x] Unit 07 — Insurance Workflow (Authorized patients, dynamic premium calculation, claims adjudication)
 - [x] Unit 08 — Wellness Rewards (Deterministic points calculation, idempotent claiming, UI)
+- [x] Unit 09 — End-to-End Verification (12-step demo flow suite, all tests passing, full README)
 
 ## In Progress
 
-- [ ] Unit 09 — End-to-End Verification
+- None (All 9 build units complete!)
 
 ## Next Up
 
-- None (All build units implemented!)
+- Demo evaluation / optional live Sepolia testnet deployment
 
 ## Open Questions
 

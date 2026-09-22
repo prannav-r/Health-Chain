@@ -20,57 +20,5 @@
     "status": "Approved",
     "timestamp": 1758410000,
     "decisionReason": "Pre-approved under preventive health allowance"
-  },
-  {
-    "id": 1790055378484,
-    "claimCode": "CLM-1317",
-    "policyId": "POL-1001",
-    "patientId": "P001",
-    "amount": 2500,
-    "description": "Sports physical therapy reimbursement",
-    "status": "Approved",
-    "timestamp": 1790055378,
-    "onChainTxHash": "0xmockclaimtx111",
-    "decisionReason": "Verified treatment documentation",
-    "resolvedAt": 1790055378
-  },
-  {
-    "id": 1790055378503,
-    "claimCode": "CLM-3747",
-    "policyId": "POL-1001",
-    "patientId": "P001",
-    "amount": 8000,
-    "description": "Cosmetic elective dental",
-    "status": "Rejected",
-    "timestamp": 1790055378,
-    "onChainTxHash": "0xmockclaimtx111",
-    "decisionReason": "Cosmetic procedures excluded from coverage",
-    "resolvedAt": 1790055378
-  },
-  {
-    "id": 1790055482741,
-    "claimCode": "CLM-3462",
-    "policyId": "POL-1001",
-    "patientId": "P001",
-    "amount": 2500,
-    "description": "Sports physical therapy reimbursement",
-    "status": "Approved",
-    "timestamp": 1790055482,
-    "onChainTxHash": "0xmockclaimtx111",
-    "decisionReason": "Verified treatment documentation",
-    "resolvedAt": 1790055482
-  },
-  {
-    "id": 1790055482758,
-    "claimCode": "CLM-4791",
-    "policyId": "POL-1001",
-    "patientId": "P001",
-    "amount": 8000,
-    "description": "Cosmetic elective dental",
-    "status": "Rejected",
-    "timestamp": 1790055482,
-    "onChainTxHash": "0xmockclaimtx111",
-    "decisionReason": "Cosmetic procedures excluded from coverage",
-    "resolvedAt": 1790055482
   }
 ]
