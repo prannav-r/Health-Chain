@@ -13,6 +13,7 @@ import {
   updateClaimStatusInStore
 } from './dataLoader.js';
 import { validatePatientHealthData } from './validation.js';
+import { calculateWellnessReward } from './rewards.js';
 import blockchainService from './blockchainService.js';
 
 const app = express();
@@ -260,6 +261,93 @@ app.get('/api/rewards/:patientId', async (req, res) => {
     res.json({ success: true, patientId, rewardPoints: points });
   } catch (err) {
     res.status(500).json({ success: false, error: `Failed to fetch reward points: ${err.message}` });
+  }
+});
+
+// Check daily wellness reward eligibility and claim status
+app.get('/api/rewards/:patientId/status', async (req, res) => {
+  const { patientId } = req.params;
+  const { date } = req.query;
+
+  if (!date) {
+    return res.status(400).json({ success: false, error: 'date query parameter is required' });
+  }
+
+  try {
+    const validationResults = await validatePatientHealthData(patientId, date);
+    const dayValidation = validationResults.length > 0 ? validationResults[0] : null;
+    const rewardCalculation = calculateWellnessReward(dayValidation);
+    const isClaimed = await blockchainService.isRewardProcessed(patientId, date);
+    const totalPoints = await blockchainService.getRewardPoints(patientId);
+
+    res.json({
+      success: true,
+      patientId,
+      date,
+      points: rewardCalculation.points,
+      eligible: rewardCalculation.eligible,
+      isClaimed,
+      breakdown: rewardCalculation.breakdown,
+      reasons: rewardCalculation.reasons,
+      totalPoints
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: `Failed to fetch reward status: ${err.message}` });
+  }
+});
+
+// Claim daily wellness reward on blockchain (with on-chain duplicate prevention)
+app.post('/api/rewards/:patientId/claim', async (req, res) => {
+  const { patientId } = req.params;
+  const { date } = req.body;
+
+  if (!date) {
+    return res.status(400).json({ success: false, error: 'date is required in request body' });
+  }
+
+  try {
+    // 1. Check if already claimed on-chain
+    const alreadyProcessed = await blockchainService.isRewardProcessed(patientId, date);
+    if (alreadyProcessed) {
+      return res.status(400).json({
+        success: false,
+        error: 'Reward already awarded for this record'
+      });
+    }
+
+    // 2. Validate data and calculate points
+    const validationResults = await validatePatientHealthData(patientId, date);
+    const dayValidation = validationResults.length > 0 ? validationResults[0] : null;
+    const rewardCalculation = calculateWellnessReward(dayValidation);
+
+    if (!rewardCalculation.eligible || rewardCalculation.points === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Health activity does not qualify for wellness points or contains discrepancies',
+        reasons: rewardCalculation.reasons
+      });
+    }
+
+    // 3. Award points on smart contract
+    const txResult = await blockchainService.addRewardPoints(
+      patientId,
+      date,
+      rewardCalculation.points
+    );
+
+    res.json({
+      success: true,
+      message: `Successfully awarded ${rewardCalculation.points} wellness points on-chain`,
+      data: {
+        ...txResult,
+        breakdown: rewardCalculation.breakdown
+      }
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: `Failed to claim wellness reward: ${err.message}`
+    });
   }
 });
 

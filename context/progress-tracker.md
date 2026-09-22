@@ -23,14 +23,15 @@ Update this file after every meaningful implementation change.
 - [x] Unit 05 — Blockchain Integration (Deploy script, backend ethers service, on-chain endpoints)
 - [x] Unit 06 — Patient Dashboard (Metrics, source comparison, consent toggle, blockchain records, rewards)
 - [x] Unit 07 — Insurance Workflow (Authorized patients, dynamic premium calculation, claims adjudication)
+- [x] Unit 08 — Wellness Rewards (Deterministic points calculation, idempotent claiming, UI)
 
 ## In Progress
 
-- [ ] Unit 08 — Wellness Rewards
+- [ ] Unit 09 — End-to-End Verification
 
 ## Next Up
 
-- [ ] Unit 09 — End-to-End Verification
+- None (All build units implemented!)
 
 ## Open Questions
 

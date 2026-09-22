@@ -286,6 +286,16 @@ class BlockchainService {
     const pts = await this.contract.getRewardPoints(patientId);
     return Number(pts);
   }
+
+  async isRewardProcessed(patientId, date) {
+    await this.init();
+    if (!this.contract) return false;
+    try {
+      return await this.contract.isRewardProcessed(patientId, date);
+    } catch {
+      return false;
+    }
+  }
 }
 
 // Export singleton instance for default application use

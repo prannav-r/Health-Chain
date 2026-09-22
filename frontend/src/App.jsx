@@ -25,6 +25,7 @@ export default function App() {
   const [onChainRecord, setOnChainRecord] = useState(null);
   const [hasConsent, setHasConsent] = useState(false);
   const [rewardPoints, setRewardPoints] = useState(0);
+  const [rewardStatus, setRewardStatus] = useState(null);
   const [blockchainInfo, setBlockchainInfo] = useState(null);
 
   // Load patients list and blockchain info once on mount
@@ -105,15 +106,26 @@ export default function App() {
         setHasConsent(false);
       }
 
-      // 5. Fetch wellness reward points
+      // 5. Fetch wellness reward points and daily eligibility status
       try {
         const rewardsRes = await fetch(`/api/rewards/${selectedPatientId}`);
         const rewardsData = await rewardsRes.json();
         if (rewardsData.success) {
           setRewardPoints(rewardsData.rewardPoints || 0);
         }
+
+        const statusRes = await fetch(
+          `/api/rewards/${selectedPatientId}/status?date=${selectedDate}`
+        );
+        const statusData = await statusRes.json();
+        if (statusData.success) {
+          setRewardStatus(statusData);
+        } else {
+          setRewardStatus(null);
+        }
       } catch {
         setRewardPoints(0);
+        setRewardStatus(null);
       }
     } catch (err) {
       setError(err.message);
@@ -157,6 +169,22 @@ export default function App() {
       throw new Error(data.error || 'Failed to write record to blockchain');
     }
     // Refresh on-chain status
+    await loadPatientData();
+    return data;
+  };
+
+  // Handle claiming daily wellness reward on blockchain
+  const handleClaimReward = async (date) => {
+    const res = await fetch(`/api/rewards/${selectedPatientId}/claim`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Failed to claim reward');
+    }
+    // Refresh accrued points and status
     await loadPatientData();
     return data;
   };
@@ -320,7 +348,13 @@ export default function App() {
               onToggle={handleToggleConsent}
               loading={loading}
             />
-            <WellnessCard points={rewardPoints} />
+            <WellnessCard
+              points={rewardPoints}
+              selectedDate={selectedDate}
+              rewardStatus={rewardStatus}
+              onClaimReward={handleClaimReward}
+              loading={loading}
+            />
           </div>
         </>
       )}
