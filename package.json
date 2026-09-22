@@ -4,12 +4,15 @@
   "private": true,
   "description": "Health-Chain MVP: Health data validation, blockchain hashes, consent, insurance, and rewards",
   "scripts": {
+    "test": "npm --prefix blockchain test && npm --prefix backend test",
+    "test:contracts": "npm.cmd --prefix blockchain test",
+    "test:backend": "npm.cmd --prefix backend test",
     "dev:backend": "npm.cmd --prefix backend run dev",
     "start:backend": "npm.cmd --prefix backend start",
     "dev:frontend": "npm.cmd --prefix frontend run dev",
     "build:frontend": "npm.cmd --prefix frontend run build",
     "compile:contracts": "npm.cmd --prefix blockchain run compile",
-    "test:contracts": "npm.cmd --prefix blockchain test"
+    "deploy:local": "npm.cmd --prefix blockchain run deploy:local"
   },
   "keywords": [
     "blockchain",
