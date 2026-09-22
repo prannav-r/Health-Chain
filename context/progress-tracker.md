@@ -20,14 +20,14 @@ Update this file after every meaningful implementation change.
 - [x] Unit 02 — Mock Health Data (Patients and multi-source health records API)
 - [x] Unit 03 — Health Validation (Multi-source comparison, deterministic hashing, SHA-256)
 - [x] Unit 04 — Smart Contract (Solidity contract and full Hardhat test suite)
+- [x] Unit 05 — Blockchain Integration (Deploy script, backend ethers service, on-chain endpoints)
 
 ## In Progress
 
-- [ ] Unit 05 — Blockchain Integration
+- [ ] Unit 06 — Patient Dashboard
 
 ## Next Up
 
-- [ ] Unit 06 — Patient Dashboard
 - [ ] Unit 07 — Insurance Workflow
 - [ ] Unit 08 — Wellness Rewards
 - [ ] Unit 09 — End-to-End Verification
